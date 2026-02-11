@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}登入{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h3 class="text-center">登入系統</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 text-center">
+                        <a href="/sso_login" class="btn btn-primary btn-lg btn-block mb-3">
+                            <i class="fas fa-sign-in-alt"></i> 單一簽入登入
+                        </a>
+                        <div class="text-center mb-3">- 或 -</div>
+                    </div>
+                    
+                    <form method="post" action="/login">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">帳號</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密碼</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-key"></i> 一般登入
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

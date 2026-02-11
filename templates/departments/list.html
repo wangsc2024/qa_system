@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>部門管理</h2>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="mb-3">
+        <a href="/departments/create" class="btn btn-primary">新增部門</a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">局/處級單位</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>代碼</th>
+                            <th>名稱</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in bureau_departments %}
+                        <tr>
+                            <td>{{ dept.code }}</td>
+                            <td>{{ dept.name }}</td>
+                            <td>
+                                <a href="/departments/{{ dept.id }}/edit" class="btn btn-sm btn-outline-primary">編輯</a>
+                                <form action="/departments/{{ dept.id }}/delete" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('確定要刪除此部門嗎？')">刪除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% if dept.bureau_code in section_departments %}
+                        {% for section in section_departments[dept.bureau_code] %}
+                        <tr class="table-light">
+                            <td>{{ section.code }}</td>
+                            <td><span class="ms-3">└</span> {{ section.name }}</td>
+                            <td>
+                                <a href="/departments/{{ section.id }}/edit" class="btn btn-sm btn-outline-primary">編輯</a>
+                                <form action="/departments/{{ section.id }}/delete" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('確定要刪除此部門嗎？')">刪除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

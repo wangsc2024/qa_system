@@ -1,0 +1,49 @@
+/* 全局樣式 */
+body {
+    font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* 導航欄 */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 卡片 */
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 表格 */
+.table {
+    background-color: #fff;
+}
+
+/* 按鈕 */
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+/* 徽章 */
+.badge {
+    font-weight: 500;
+}
+
+/* 頁腳 */
+.footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 1rem 0;
+} 

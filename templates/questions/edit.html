@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}編輯問題{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>編輯問題</h1>
+    </div>
+    <div class="col-auto">
+        <a href="/questions/{{ question.id }}" class="btn btn-secondary">返回詳情</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form id="questionForm" method="post" action="/questions/{{ question.id }}/edit">
+            <div class="mb-3">
+                <label for="title" class="form-label">標題</label>
+                <input type="text" class="form-control" id="title" name="title" required value="{{ question.title }}">
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="year" class="form-label">年度</label>
+                        <input type="number" class="form-control" id="year" name="year" min="2000" max="2100" value="{{ question.year or '' }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="question_date" class="form-label">日期</label>
+                        <input type="date" class="form-control" id="question_date" name="question_date" value="{% if question.question_date %}{% if question.question_date is string %}{{ question.question_date }}{% else %}{{ question.question_date.strftime('%Y-%m-%d') }}{% endif %}{% endif %}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">填報單位（處）</label>
+                <div class="form-control" readonly style="background-color: #e9ecef;">
+                    {% for dept in question.report_departments %}
+                        <span class="badge bg-primary me-1">{{ dept.name }}</span>
+                        <input type="hidden" name="report_department_ids" value="{{ dept.id }}">
+                    {% endfor %}
+                </div>
+                <div class="form-text">填報單位不可修改</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="answer_department_ids" class="form-label">回答單位（處） <span class="text-danger">*</span></label>
+                <select class="form-select" id="answer_department_ids" name="answer_department_ids" multiple required>
+                    {% for department in departments %}
+                    <option value="{{ department.id }}" {% if department.id in answer_department_ids %}selected{% endif %}>{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">可選擇多個回答單位</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="content" class="form-label">問題內容</label>
+                <textarea class="form-control" id="content" name="content" rows="5" required>{{ question.content }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="closed_date" class="form-label">結案日期</label>
+                <input type="date" class="form-control" id="closed_date" name="closed_date" value="{% if question.closed_date %}{% if question.closed_date is string %}{{ question.closed_date }}{% else %}{{ question.closed_date.strftime('%Y-%m-%d') }}{% endif %}{% endif %}">
+                <div class="form-text">設置日期將自動結案，清除日期將取消結案</div>
+            </div>
+            
+            {% if question.closed_date %}
+            <div class="mb-3">
+                <label for="summary" class="form-label">結案摘要</label>
+                <textarea class="form-control" id="summary" name="summary" rows="3">{{ question.summary or '' }}</textarea>
+                <div class="form-text">結案時的摘要說明</div>
+            </div>
+            {% endif %}
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">儲存變更</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 如果年度為空，設置為當前年度
+    const yearInput = document.getElementById('year');
+    if (!yearInput.value) {
+        yearInput.value = new Date().getFullYear();
+    }
+    
+    // 如果日期為空，設置為當前日期
+    const dateInput = document.getElementById('question_date');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %} 

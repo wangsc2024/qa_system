@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}問題詳情 - {{ question.title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>問題詳情</h1>
+    </div>
+    <div class="col-auto">
+        <a href="/questions" class="btn btn-secondary">返回列表</a>
+        
+        {% if has_permission(current_user, "edit_question") %}
+        <a href="/questions/{{ question.id }}/edit" class="btn btn-primary">編輯問題</a>
+        {% endif %}
+        
+        {% if question.display_status != "CLOSED" and has_permission(current_user, "close_question") %}
+        <button class="btn btn-warning" id="closeBtn">結案</button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0">{{ question.title }}</h5>
+        <span>
+            {% if question.display_status == 'PENDING' %}
+            <span class="badge bg-warning">待回覆</span>
+            {% elif question.display_status == 'ANSWERED' %}
+            <span class="badge bg-info">已回覆</span>
+            {% elif question.display_status == 'CLOSED' %}
+            <span class="badge bg-success">已結案</span>
+            {% endif %}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>填報單位（處）:</strong> 
+                {% if question.filtered_report_departments %}
+                    {% for dept in question.filtered_report_departments %}
+                        <span class="badge bg-primary">{{ dept.name }}</span>
+                    {% endfor %}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <strong>建立日期:</strong> 
+                {% if question.created_date %}
+                    {% if question.created_date is string %}
+                        {{ question.created_date }}
+                    {% else %}
+                        {{ question.created_date.strftime('%Y-%m-%d %H:%M') }}
+                    {% endif %}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>回答單位（處）:</strong> 
+                {% if question.filtered_answer_departments %}
+                    {% for dept in question.filtered_answer_departments %}
+                        <span class="badge bg-info">{{ dept.name }}</span>
+                    {% endfor %}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <strong>年度:</strong> {{ question.year or '-' }}
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>問題日期:</strong> 
+                {% if question.question_date %}
+                    {% if question.question_date is string %}
+                        {{ question.question_date }}
+                    {% else %}
+                        {{ question.question_date.strftime('%Y-%m-%d') }}
+                    {% endif %}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <strong>狀態:</strong>
+                {% if question.display_status == 'PENDING' %}
+                <span class="badge bg-warning">待回覆</span>
+                {% elif question.display_status == 'ANSWERED' %}
+                <span class="badge bg-info">已回覆</span>
+                {% elif question.display_status == 'CLOSED' %}
+                <span class="badge bg-success">已結案</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <strong>問題內容:</strong>
+            <div class="p-3 bg-light rounded">{{ question.content }}</div>
+        </div>
+        
+        <!-- 摘要部分 -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>摘要:</strong>
+                {% if current_user.id == question.creator_id and question.display_status != "CLOSED" %}
+                <button class="btn btn-sm btn-outline-primary" id="editSummaryBtn">編輯摘要</button>
+                {% endif %}
+            </div>
+            <div class="p-3 bg-light rounded" id="summaryContent">{{ question.summary or '(尚未填寫摘要)' }}</div>
+        </div>
+        
+        <!-- 結案信息 -->
+        <div class="mb-3">
+            <strong>結案日期:</strong> 
+            {% if question.closed_date %}
+                {% if question.closed_date is string %}
+                    {{ question.closed_date }}
+                {% else %}
+                    {{ question.closed_date.strftime('%Y-%m-%d') }}
+                {% endif %}
+            {% else %}
+                未設置
+            {% endif %}
+        </div>
+
+        {% if question.summary %}
+        <div class="mb-3">
+            <strong>結案摘要:</strong>
+            <p>{{ question.summary }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0">回覆記錄</h5>
+        {% if question.display_status != "CLOSED" and question.can_reply %}
+        <button class="btn btn-primary btn-sm" id="replyBtn">新增回覆</button>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div id="reportsContainer">
+            {% if question.reports %}
+                {% for report in question.reports %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between">
+                        <span>{{ report.user.username }} ({{ report.user.department.name }})</span>
+                        <div>
+                            <span>
+                                {% if report.reply_date is string %}
+                                    {{ report.reply_date }}
+                                {% else %}
+                                    {{ report.reply_date.strftime('%Y-%m-%d %H:%M') }}
+                                {% endif %}
+                            </span>
+                            {% if question.display_status != "CLOSED" and has_permission(current_user, "edit_report") and (report.user_id == current_user.id or has_permission(current_user, "manage_roles")) %}
+                            <button class="btn btn-sm btn-info edit-reply-btn" data-id="{{ report.id }}" data-content="{{ report.reply_content }}">編輯</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {{ report.reply_content }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                {% if has_permission(current_user, "manage_all") %}
+                <div class="alert alert-info">目前尚無任何回覆記錄</div>
+                {% else %}
+                <div class="alert alert-info">目前尚無您所屬部門的回覆記錄</div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 結案對話框 -->
+<div class="modal fade" id="closeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">結案</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="closeForm">
+                    <div class="mb-3">
+                        <label for="summary" class="form-label">摘要</label>
+                        <textarea class="form-control" id="summary" name="summary" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="submitClose">確認結案</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 回覆對話框 -->
+<div class="modal fade" id="replyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增回覆</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="replyForm">
+                    <div class="mb-3">
+                        <label for="replyContent" class="form-label">回覆內容</label>
+                        <textarea class="form-control" id="replyContent" name="replyContent" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="submitReply">確認送出</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯回覆對話框 -->
+<div class="modal fade" id="editReplyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">編輯回覆</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editReplyForm">
+                    <input type="hidden" id="editReportId" name="editReportId">
+                    <div class="mb-3">
+                        <label for="editReplyContent" class="form-label">回覆內容</label>
+                        <textarea class="form-control" id="editReplyContent" name="editReplyContent" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="submitEditReply">確認修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯摘要對話框 -->
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">編輯摘要</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="summaryForm">
+                    <div class="mb-3">
+                        <label for="summaryText" class="form-label">摘要內容</label>
+                        <textarea class="form-control" id="summaryText" name="summaryText" rows="5"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="submitSummary">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 結案功能
+    const closeBtn = document.getElementById('closeBtn');
+    if (closeBtn) {
+        const closeModal = new bootstrap.Modal(document.getElementById('closeModal'));
+        
+        closeBtn.addEventListener('click', function() {
+            closeModal.show();
+        });
+        
+        document.getElementById('submitClose').addEventListener('click', function() {
+            const summary = document.getElementById('summary').value;
+            
+            if (!summary) {
+                alert('請填寫摘要');
+                return;
+            }
+            
+            fetch(`/questions/{{ question.id }}/close`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ summary: summary })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeModal.hide();
+                    window.location.reload();
+                } else {
+                    alert('結案失敗');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('發生錯誤');
+            });
+        });
+    }
+    
+    // 回覆功能
+    const replyBtn = document.getElementById('replyBtn');
+    if (replyBtn) {
+        const replyModal = new bootstrap.Modal(document.getElementById('replyModal'));
+        
+        replyBtn.addEventListener('click', function() {
+            replyModal.show();
+        });
+        
+        document.getElementById('submitReply').addEventListener('click', function() {
+            const replyContent = document.getElementById('replyContent').value;
+            
+            if (!replyContent) {
+                alert('請填寫回覆內容');
+                return;
+            }
+            
+            fetch(`/reports/{{ question.id }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ reply_content: replyContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    replyModal.hide();
+                    window.location.reload();
+                } else {
+                    alert('回覆失敗');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('發生錯誤');
+            });
+        });
+    }
+    
+    // 編輯回覆功能
+    const editReplyBtns = document.querySelectorAll('.edit-reply-btn');
+    if (editReplyBtns.length > 0) {
+        const editReplyModal = new bootstrap.Modal(document.getElementById('editReplyModal'));
+        
+        editReplyBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const reportId = this.getAttribute('data-id');
+                const content = this.getAttribute('data-content');
+                
+                document.getElementById('editReportId').value = reportId;
+                document.getElementById('editReplyContent').value = content;
+                
+                editReplyModal.show();
+            });
+        });
+        
+        document.getElementById('submitEditReply').addEventListener('click', function() {
+            const reportId = document.getElementById('editReportId').value;
+            const replyContent = document.getElementById('editReplyContent').value;
+            
+            if (!replyContent) {
+                alert('請填寫回覆內容');
+                return;
+            }
+            
+            fetch(`/reports/${reportId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ reply_content: replyContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    editReplyModal.hide();
+                    window.location.reload();
+                } else {
+                    alert('編輯失敗');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('發生錯誤');
+            });
+        });
+    }
+    
+    // 編輯摘要功能
+    const editSummaryBtn = document.getElementById('editSummaryBtn');
+    if (editSummaryBtn) {
+        const summaryModal = new bootstrap.Modal(document.getElementById('summaryModal'));
+        
+        editSummaryBtn.addEventListener('click', function() {
+            // 獲取當前摘要內容
+            const currentSummary = document.getElementById('summaryContent').textContent;
+            document.getElementById('summaryText').value = currentSummary === '(尚未填寫摘要)' ? '' : currentSummary;
+            
+            summaryModal.show();
+        });
+        
+        document.getElementById('submitSummary').addEventListener('click', function() {
+            const summaryText = document.getElementById('summaryText').value;
+            
+            fetch(`/questions/{{ question.id }}/summary`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ summary: summaryText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    summaryModal.hide();
+                    document.getElementById('summaryContent').textContent = summaryText || '(尚未填寫摘要)';
+                } else {
+                    alert('更新摘要失敗');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('發生錯誤');
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>新增部門</h2>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="/departments/create">
+                <div class="mb-3">
+                    <label for="code" class="form-label">部門代碼</label>
+                    <input type="text" class="form-control" id="code" name="code" required maxlength="4" pattern="\d{4}" title="請輸入4位數字">
+                    <div class="form-text">請輸入4位數字，前2碼代表處，後2碼代表科。例如：1000代表行政暨研考處，1030代表資訊管理科。</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">部門名稱</label>
+                    <input type="text" class="form-control" id="name" name="name" required maxlength="50">
+                </div>
+                
+                <div class="mb-3">
+                    <a href="/departments" class="btn btn-secondary">返回</a>
+                    <button type="submit" class="btn btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}新增問題{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>新增問題</h1>
+    </div>
+    <div class="col-auto">
+        <a href="/questions" class="btn btn-secondary">返回列表</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form id="questionForm">
+            <div class="mb-3">
+                <label for="title" class="form-label">標題</label>
+                <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="year" class="form-label">年度</label>
+                        <input type="number" class="form-control" id="year" name="year" min="2000" max="2100">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="question_date" class="form-label">日期</label>
+                        <input type="date" class="form-control" id="question_date" name="question_date">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="report_department_id" class="form-label">填報單位（處）</label>
+                <input type="hidden" id="report_department_id" name="report_department_id" value="{{ current_user.department_id }}">
+                <input type="text" class="form-control" value="{{ current_user.department.name if current_user.department else '未設定部門' }}" readonly>
+                <div class="form-text">自動設定為您所屬的單位 (用戶ID: {{ current_user.id }}, 部門ID: {{ current_user.department_id }})</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="answer_department_ids" class="form-label">回答單位（處） <span class="text-danger">*</span></label>
+                <select class="form-select" id="answer_department_ids" name="answer_department_ids" multiple required>
+                    {% for department in departments %}
+                    {% if department.code.endswith('00') and department.code|length == 4 %}
+                    <option value="{{ department.id }}">{{ department.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <div class="form-text">可選擇多個回答單位</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="content" class="form-label">問題內容</label>
+                <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">提交</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 設定當前年度和日期為預設值
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    
+    // 設定年度預設值
+    document.getElementById('year').value = currentYear;
+    
+    // 設定日期預設值（格式化為 YYYY-MM-DD）
+    const formattedDate = currentDate.toISOString().split('T')[0];
+    document.getElementById('question_date').value = formattedDate;
+    
+    // 取得表單元素
+    const form = document.getElementById('questionForm');
+    
+    // 表單提交處理
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        // 獲取表單數據
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        const year = document.getElementById('year').value ? parseInt(document.getElementById('year').value) : null;
+        const questionDate = document.getElementById('question_date').value || null;
+        
+        // 獲取填報部門ID，如果沒有則使用null
+        const reportDepartmentIdInput = document.getElementById('report_department_id');
+        const reportDepartmentId = reportDepartmentIdInput && reportDepartmentIdInput.value 
+            ? parseInt(reportDepartmentIdInput.value) 
+            : null;
+        
+        // 如果沒有部門ID，顯示錯誤
+        if (reportDepartmentId === null) {
+            alert('未設定填報單位，請聯絡系統管理員');
+            return;
+        }
+        
+        // 獲取選中的回答部門IDs
+        const answerDepartmentSelect = document.getElementById('answer_department_ids');
+        const answerDepartmentIds = Array.from(answerDepartmentSelect.selectedOptions)
+            .map(option => parseInt(option.value));
+        
+        // 表單驗證
+        if (!title || !content || answerDepartmentIds.length === 0) {
+            alert('請填寫所有必填欄位');
+            return;
+        }
+        
+        // 發送API請求
+        fetch('/questions/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                content: content,
+                year: year,
+                question_date: questionDate,
+                report_department_ids: [reportDepartmentId],
+                answer_department_ids: answerDepartmentIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/questions';
+            } else {
+                alert('建立問題失敗');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('發生錯誤');
+        });
+    });
+});
+</script>
+{% endblock %} 

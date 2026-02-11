@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>資料匯出</h2>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>查詢條件</h5>
+        </div>
+        <div class="card-body">
+            <form action="/export/search" method="get" class="mb-4">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="department_id">部門</label>
+                        <select class="form-control" id="department_id" name="department_id">
+                            <option value="">-- 全部部門 --</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="year">年度</label>
+                        <select class="form-control" id="year" name="year">
+                            <option value="">-- 全部年度 --</option>
+                            {% for y in range(current_year, current_year-5, -1) %}
+                            <option value="{{ y }}">{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="status">狀態</label>
+                        <select class="form-control" id="status" name="status">
+                            <option value="all">-- 全部狀態 --</option>
+                            {% for s in statuses %}
+                            <option value="{{ s }}">{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="keyword">關鍵字</label>
+                        <input type="text" class="form-control" id="keyword" name="keyword" placeholder="標題、內容或摘要">
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> 查詢
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">問題清單匯出</h5>
+                    <p class="card-text">匯出所有問題的清單，包含問題標題、狀態、日期等資訊。</p>
+                    <a href="/export/questions" class="btn btn-primary">
+                        <i class="fas fa-file-excel"></i> 匯出全部資料
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

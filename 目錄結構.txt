@@ -1,0 +1,38 @@
+issue_reporting_system/
+├── app/
+│   ├── database.py@
+│   ├── dependencies.py
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── role.py
+│   │   ├── department.py
+│   │   ├── question.py
+│   │   ├── report.py
+│   ├── routers/
+│   │   ├── auth.py
+│   │   ├── questions.py
+│   │   ├── reports.py
+│   │   ├── export.py
+│   │   ├── users.py
+│   │   ├── roles.py
+│   ├── schemas/
+│   │   ├── question.py
+│   │   ├── report.py
+│   │   ├── user.py
+│   │   ├── role.py
+├── templates/
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── users/
+│   │   ├── list.html
+│   │   ├── create.html
+│   ├── roles/
+│   │   ├── list.html
+│   │   ├── create.html
+├── static/
+│   └── style.css
+├── init_db.py
+├── main.py
+├── requirements.txt
+├── .env.example
+└── README.md

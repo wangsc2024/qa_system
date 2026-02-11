@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}角色管理{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>角色管理</h1>
+    </div>
+    <div class="col-auto">
+        <a href="/roles/create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 新增角色
+        </a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>角色名稱</th>
+                        <th>描述</th>
+                        <th>權限</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in roles %}
+                    <tr>
+                        <td>{{ role.id }}</td>
+                        <td>{{ role.name }}</td>
+                        <td>{{ role.description or '-' }}</td>
+                        <td>
+                            {% if "read_question" in role.permissions %}<span class="badge bg-info">查看問題</span>{% endif %}
+                            {% if "create_question" in role.permissions %}<span class="badge bg-info">創建問題</span>{% endif %}
+                            {% if "edit_question" in role.permissions %}<span class="badge bg-info">編輯問題</span>{% endif %}
+                            {% if "close_question" in role.permissions %}<span class="badge bg-info">結案問題</span>{% endif %}
+                            {% if "read_report" in role.permissions %}<span class="badge bg-info">查看回覆</span>{% endif %}
+                            {% if "create_report" in role.permissions %}<span class="badge bg-info">創建回覆</span>{% endif %}
+                            {% if "edit_report" in role.permissions %}<span class="badge bg-info">編輯回覆</span>{% endif %}
+                            {% if "export_questions" in role.permissions %}<span class="badge bg-info">匯出問題</span>{% endif %}
+                            {% if "export_reports" in role.permissions %}<span class="badge bg-info">匯出回覆</span>{% endif %}
+                            {% if "manage_users" in role.permissions %}<span class="badge bg-info">管理用戶</span>{% endif %}
+                            {% if "manage_roles" in role.permissions %}<span class="badge bg-info">管理角色</span>{% endif %}
+                            {% if "manage_departments" in role.permissions %}<span class="badge bg-info">管理部門</span>{% endif %}
+                            {% if "manage_all" in role.permissions %}<span class="badge bg-info">系統管理員</span>{% endif %}
+                            
+                            {% if not role.permissions %}
+                            <span class="text-muted">無權限</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/roles/{{ role.id }}/edit" class="btn btn-sm btn-info">
+                                <i class="bi bi-pencil"></i> 編輯
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ role.id }}">
+                                <i class="bi bi-trash"></i> 刪除
+                            </button>
+                            
+                            <!-- 刪除確認對話框 -->
+                            <div class="modal fade" id="deleteModal{{ role.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">確認刪除</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>確定要刪除角色 <strong>{{ role.name }}</strong> 嗎？此操作無法撤銷。</p>
+                                            <p class="text-danger">注意：如果有用戶正在使用此角色，將無法刪除。</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                            <form method="post" action="/roles/{{ role.id }}/delete" style="display: inline;">
+                                                <button type="submit" class="btn btn-danger">確認刪除</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% if not roles %}
+                    <tr>
+                        <td colspan="5" class="text-center">沒有找到角色</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

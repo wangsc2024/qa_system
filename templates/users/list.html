@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}用戶管理{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>用戶管理</h2>
+    
+    <div class="mb-3">
+        <a href="/users/create" class="btn btn-primary">新增用戶</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>姓名</th>
+                <th>帳號</th>
+                <th>Email</th>
+                <th>狀態</th>
+                <th>角色</th>
+                <th>部門</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.full_name or user.username }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email or '' }}</td>
+                <td>{{ '啟用' if user.is_active else '停用' }}</td>
+                <td>
+                    {% for role in user.roles %}
+                    <span class="badge bg-info">{{ role.name }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for dept in user.departments %}
+                    <span class="badge bg-secondary">{{ dept.name }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="/users/{{ user.id }}/edit" class="btn btn-sm btn-primary">編輯</a>
+                    {% if user.id != current_user.id %}
+                    <form action="/users/{{ user.id }}/delete" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('確定要刪除此用戶嗎？')">刪除</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

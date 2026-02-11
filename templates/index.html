@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}問題填報回覆系統 - 首頁{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4">問題填報回覆系統</h1>
+            <p class="lead">高效追蹤、管理並解決問題的平台</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-5">
+                    {% if current_user %}
+                    <h2 class="mb-4 text-center">歡迎回來，{{ current_user.full_name or current_user.username }}！</h2>
+                    <div class="d-grid gap-3">
+                        <a href="/questions" class="btn btn-primary btn-lg">問題管理</a>
+                        
+                        {% if current_user and current_user.roles %}
+                        {% set user_permissions = [] %}
+                        {% for role in current_user.roles %}
+                        {% for permission in role.permissions %}
+                        {% if permission not in user_permissions %}
+                        {% set _ = user_permissions.append(permission) %}
+                        {% endif %}
+                        {% endfor %}
+                        {% endfor %}
+                        
+                        {% if "manage_users" in user_permissions %}
+                        <a href="/users" class="btn btn-outline-primary btn-lg">使用者管理</a>
+                        {% endif %}
+                        {% if "manage_roles" in user_permissions %}
+                        <a href="/roles" class="btn btn-outline-primary btn-lg">角色管理</a>
+                        {% endif %}
+                        {% if "manage_departments" in user_permissions %}
+                        <a href="/departments" class="btn btn-outline-primary btn-lg">部門管理</a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <h2 class="mb-4 text-center">請先登入系統</h2>
+                    <div class="d-grid">
+                        <a href="/login" class="btn btn-primary btn-lg">前往登入</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-center"><i class="bi bi-question-circle"></i> 問題填報</h3>
+                    <p class="card-text">
+                        使用者可以針對部門需要填報的問題進行記錄，包含標題、內容、填報單位等資訊。系統會自動記錄填報時間和狀態。
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-center"><i class="bi bi-chat-dots"></i> 問題回覆</h3>
+                    <p class="card-text">
+                        針對已填報的問題，可以進行多次回覆。每次回覆都會記錄回覆者、回覆時間和回覆內容，便於追蹤問題處理進度。
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-center"><i class="bi bi-check-circle"></i> 問題結案</h3>
+                    <p class="card-text">
+                        當問題已解決，管理員可以對問題進行結案操作，填寫摘要說明。結案後的問題將會保留完整記錄，但不再允許新回覆。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
