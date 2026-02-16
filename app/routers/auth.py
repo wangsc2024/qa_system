@@ -53,6 +53,8 @@ async def login(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
+        secure=True,       # 僅 HTTPS 傳送（安全修復）
+        samesite="lax",    # 防 CSRF（安全修復）
         max_age=1800,
         expires=1800,
     )
@@ -121,7 +123,11 @@ async def sso_login(
                         if staff_role:
                             logger.info(f"設置用戶角色: {staff_role.name}")
                             # 使用原生 SQL 插入角色關聯
-                            db.execute(f"INSERT INTO user_role (user_id, role_id) VALUES ({user.id}, {staff_role.id})")
+                            from sqlalchemy import text
+                            db.execute(
+                                text("INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id)"),
+                                {"user_id": user.id, "role_id": staff_role.id}
+                            )
                             db.commit()
                             logger.info(f"用戶 {account} 角色設置成功")
                         else:
@@ -133,7 +139,10 @@ async def sso_login(
                             if department:
                                 logger.info(f"設置用戶部門: {department.name} (代碼: {department.code})")
                                 # 使用原生 SQL 插入部門關聯
-                                db.execute(f"INSERT INTO user_department (user_id, department_id) VALUES ({user.id}, {department.id})")
+                                db.execute(
+                                    text("INSERT INTO user_department (user_id, department_id) VALUES (:user_id, :department_id)"),
+                                    {"user_id": user.id, "department_id": department.id}
+                                )
                                 db.commit()
                                 logger.info(f"用戶 {account} 部門設置成功")
                             else:
@@ -143,7 +152,7 @@ async def sso_login(
                         db.rollback()
                         return templates.TemplateResponse(
                             "error.html",
-                            {"request": request, "message": f"創建用戶失敗: {str(db_error)}"}
+                            {"request": request, "message": "用戶建立過程發生錯誤，請聯繫系統管理員"}
                         )
                 elif unit_code:
                     logger.info(f"用戶 {account} 已存在，檢查部門設置")
@@ -151,11 +160,17 @@ async def sso_login(
                     department = db.query(Department).filter(Department.code == unit_code).first()
                     if department:
                         # 檢查用戶是否已經屬於該部門
-                        user_dept = db.execute(f"SELECT * FROM user_department WHERE user_id = {user.id} AND department_id = {department.id}").fetchone()
+                        user_dept = db.execute(
+                            text("SELECT * FROM user_department WHERE user_id = :user_id AND department_id = :department_id"),
+                            {"user_id": user.id, "department_id": department.id}
+                        ).fetchone()
                         if not user_dept:
                             logger.info(f"更新用戶部門: {department.name} (代碼: {department.code})")
                             # 使用原生 SQL 插入部門關聯
-                            db.execute(f"INSERT INTO user_department (user_id, department_id) VALUES ({user.id}, {department.id})")
+                            db.execute(
+                                text("INSERT INTO user_department (user_id, department_id) VALUES (:user_id, :department_id)"),
+                                {"user_id": user.id, "department_id": department.id}
+                            )
                             try:
                                 db.commit()
                                 logger.info(f"用戶 {account} 部門更新成功")
@@ -164,7 +179,7 @@ async def sso_login(
                                 db.rollback()
                                 return templates.TemplateResponse(
                                     "error.html",
-                                    {"request": request, "message": f"更新用戶部門失敗: {str(db_error)}"}
+                                    {"request": request, "message": "部門資料更新失敗，請聯繫系統管理員"}
                                 )
                         else:
                             logger.info(f"用戶已經屬於部門 {department.name}")
@@ -178,6 +193,8 @@ async def sso_login(
                     key="access_token",
                     value=f"Bearer {access_token}",
                     httponly=True,
+                    secure=True,       # 僅 HTTPS 傳送（安全修復）
+                    samesite="lax",    # 防 CSRF（安全修復）
                     max_age=1800,
                     expires=1800,
                 )
@@ -193,14 +210,14 @@ async def sso_login(
             logger.error(f"SOAP 呼叫失敗: {str(soap_error)}")
             return templates.TemplateResponse(
                 "error.html",
-                {"request": request, "message": f"SOAP 呼叫失敗: {str(soap_error)}"}
+                {"request": request, "message": "SSO 驗證服務暫時無法使用，請稍後再試"}
             )
 
     except Exception as e:
         logger.error(f"登入過程發生錯誤: {str(e)}")
         return templates.TemplateResponse(
             "error.html",
-            {"request": request, "message": f"系統錯誤: {str(e)}"}
+            {"request": request, "message": "系統暫時無法處理您的請求，請稍後再試"}
         )
 
 @router.get("/logout")

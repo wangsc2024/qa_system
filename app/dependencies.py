@@ -10,6 +10,9 @@ from app.models.role import Role
 from app.models.department import Department
 from app.config import settings
 import functools
+import logging
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
 
@@ -197,29 +200,29 @@ def check_page_permission(required_permission: str, request: Request, db: Sessio
     """檢查頁面權限的輔助函數"""
     token = get_token_from_cookie(request)
     if not token:
-        print(f"未找到 token，重定向到登錄頁面")
+        logger.debug("未找到 token，重定向到登錄頁面")
         return None, RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
-            print(f"Token 中未找到用戶名，重定向到登錄頁面")
+            logger.debug("Token 中未找到用戶名，重定向到登錄頁面")
             return None, RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     except JWTError:
-        print(f"Token 解碼失敗，重定向到登錄頁面")
+        logger.debug("Token 解碼失敗，重定向到登錄頁面")
         return None, RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
             
     user = db.query(User).filter(User.username == username).first()
     if user is None:
-        print(f"未找到用戶 {username}，重定向到登錄頁面")
+        logger.warning("未找到用戶，重定向到登錄頁面")
         return None, RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     
     # 載入相關資料
     _ = user.roles
     _ = user.departments
     
-    print(f"用戶 {username} 請求權限 {required_permission}")
+    logger.debug("用戶請求權限: %s", required_permission)
             
     # 檢查用戶角色是否有所需權限
     has_permission = False
@@ -229,12 +232,12 @@ def check_page_permission(required_permission: str, request: Request, db: Sessio
             break
     
     if not has_permission:
-        print(f"用戶 {username} 沒有權限 {required_permission}，重定向到首頁")
+        logger.info("用戶權限不足，重定向到首頁")
         return None, RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
     
     # 如果指定了部門ID，檢查用戶是否有權限訪問該部門
     if department_id is not None and not can_access_department(user, department_id, db):
-        print(f"用戶 {username} 無權訪問部門 {department_id}，重定向到首頁")
+        logger.info("用戶無權訪問指定部門，重定向到首頁")
         return None, RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
             
     return user, None
@@ -252,37 +255,36 @@ def page_permission_required(required_permission: str, department_id: int = None
 
 def can_access_department(user, department_id, db):
     """檢查用戶是否有權限訪問指定部門"""
-    # 添加調試信息
-    print(f"檢查用戶 {user.username} (ID={user.id}) 是否有權限訪問部門 ID={department_id}")
+    logger.debug("檢查用戶是否有權限訪問部門 ID=%s", department_id)
     
     # 如果用戶有 manage_all 權限，允許訪問所有部門
     if has_permission(user, "manage_all"):
-        print(f"用戶 {user.username} 有 manage_all 權限，允許訪問所有部門")
+        logger.debug("用戶具有 manage_all 權限，允許訪問所有部門")
         return True
     
     # 獲取目標部門
     target_dept = db.query(Department).filter(Department.id == department_id).first()
     if not target_dept:
-        print(f"部門 ID={department_id} 不存在")
+        logger.warning("部門 ID=%s 不存在", department_id)
         return False
     
     # 檢查用戶是否直接屬於該部門
     for dept in user.departments:
         # 如果用戶屬於目標部門
         if dept.id == department_id:
-            print(f"用戶 {user.username} 直接屬於部門 ID={department_id}，允許訪問")
+            logger.debug("用戶直接屬於目標部門，允許訪問")
             return True
         # 如果用戶屬於目標部門的父部門（局/處級）
         if dept.is_bureau and target_dept.bureau_code == dept.bureau_code:
-            print(f"用戶 {user.username} 屬於父部門 {dept.name}，允許訪問子部門 {target_dept.name}")
+            logger.debug("用戶屬於父部門，允許訪問子部門")
             return True
     
     # 管理部門的權限
     if has_permission(user, "manage_departments"):
-        print(f"用戶 {user.username} 有 manage_departments 權限，允許訪問所有部門")
+        logger.debug("用戶具有 manage_departments 權限，允許訪問所有部門")
         return True
     
-    print(f"用戶 {user.username} 無權訪問部門 ID={department_id}")
+    logger.info("用戶無權訪問部門 ID=%s", department_id)
     return False
 
 
@@ -301,7 +303,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=60 * 24)  # 24小時
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt

@@ -34,106 +34,28 @@
         </span>
     </div>
     <div class="card-body">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <strong>填報單位（處）:</strong> 
-                {% if question.filtered_report_departments %}
-                    {% for dept in question.filtered_report_departments %}
-                        <span class="badge bg-primary">{{ dept.name }}</span>
-                    {% endfor %}
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-            <div class="col-md-6">
-                <strong>建立日期:</strong> 
-                {% if question.created_date %}
-                    {% if question.created_date is string %}
-                        {{ question.created_date }}
-                    {% else %}
-                        {{ question.created_date.strftime('%Y-%m-%d %H:%M') }}
-                    {% endif %}
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-        </div>
-        
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <strong>回答單位（處）:</strong> 
-                {% if question.filtered_answer_departments %}
-                    {% for dept in question.filtered_answer_departments %}
-                        <span class="badge bg-info">{{ dept.name }}</span>
-                    {% endfor %}
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-            <div class="col-md-6">
-                <strong>年度:</strong> {{ question.year or '-' }}
-            </div>
-        </div>
-        
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <strong>問題日期:</strong> 
-                {% if question.question_date %}
-                    {% if question.question_date is string %}
-                        {{ question.question_date }}
-                    {% else %}
-                        {{ question.question_date.strftime('%Y-%m-%d') }}
-                    {% endif %}
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-            <div class="col-md-6">
-                <strong>狀態:</strong>
-                {% if question.display_status == 'PENDING' %}
-                <span class="badge bg-warning">待回覆</span>
-                {% elif question.display_status == 'ANSWERED' %}
-                <span class="badge bg-info">已回覆</span>
-                {% elif question.display_status == 'CLOSED' %}
-                <span class="badge bg-success">已結案</span>
-                {% endif %}
-            </div>
-        </div>
-        
-        <div class="mb-3">
-            <strong>問題內容:</strong>
-            <div class="p-3 bg-light rounded">{{ question.content }}</div>
-        </div>
-        
-        <!-- 摘要部分 -->
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <strong>摘要:</strong>
-                {% if current_user.id == question.creator_id and question.display_status != "CLOSED" %}
-                <button class="btn btn-sm btn-outline-primary" id="editSummaryBtn">編輯摘要</button>
-                {% endif %}
-            </div>
-            <div class="p-3 bg-light rounded" id="summaryContent">{{ question.summary or '(尚未填寫摘要)' }}</div>
-        </div>
-        
-        <!-- 結案信息 -->
-        <div class="mb-3">
-            <strong>結案日期:</strong> 
-            {% if question.closed_date %}
-                {% if question.closed_date is string %}
-                    {{ question.closed_date }}
-                {% else %}
-                    {{ question.closed_date.strftime('%Y-%m-%d') }}
-                {% endif %}
-            {% else %}
-                未設置
-            {% endif %}
+        <div class="row g-2 mb-3 small text-muted border-bottom pb-2">
+            <div class="col-auto"><i class="bi bi-building"></i> 填報：{% if question.filtered_report_departments %}{% for dept in question.filtered_report_departments %}<span class="badge bg-primary">{{ dept.name }}</span> {% endfor %}{% else %}-{% endif %}</div>
+            <div class="col-auto"><i class="bi bi-reply"></i> 回答：{% if question.filtered_answer_departments %}{% for dept in question.filtered_answer_departments %}<span class="badge bg-info">{{ dept.name }}</span> {% endfor %}{% else %}-{% endif %}</div>
+            <div class="col-auto"><i class="bi bi-calendar"></i> {{ question.year or '-' }}年</div>
+            <div class="col-auto"><i class="bi bi-clock"></i> {% if question.question_date %}{% if question.question_date is string %}{{ question.question_date }}{% else %}{{ question.question_date.strftime('%Y-%m-%d') }}{% endif %}{% else %}-{% endif %}</div>
+            <div class="col-auto"><i class="bi bi-calendar-plus"></i> 建立：{% if question.created_date %}{% if question.created_date is string %}{{ question.created_date }}{% else %}{{ question.created_date.strftime('%Y-%m-%d') }}{% endif %}{% else %}-{% endif %}</div>
+            {% if question.closed_date %}<div class="col-auto"><i class="bi bi-check2-circle"></i> 結案：{% if question.closed_date is string %}{{ question.closed_date }}{% else %}{{ question.closed_date.strftime('%Y-%m-%d') }}{% endif %}</div>{% endif %}
         </div>
 
-        {% if question.summary %}
         <div class="mb-3">
-            <strong>結案摘要:</strong>
-            <p>{{ question.summary }}</p>
+            <div class="p-3 bg-light rounded" style="white-space: pre-wrap;">{{ question.content }}</div>
+        </div>
+
+        {% if question.summary or (current_user.id == question.creator_id and question.display_status != "CLOSED") %}
+        <div class="mb-3 border-top pt-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong class="small"><i class="bi bi-journal-text"></i> 摘要</strong>
+                {% if current_user.id == question.creator_id and question.display_status != "CLOSED" %}
+                <button class="btn btn-sm btn-outline-secondary py-0" id="editSummaryBtn">編輯</button>
+                {% endif %}
+            </div>
+            <div class="p-2 bg-light rounded small" id="summaryContent">{{ question.summary or '(尚未填寫摘要)' }}</div>
         </div>
         {% endif %}
     </div>

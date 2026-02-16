@@ -14,6 +14,9 @@ from app.models.report import Report
 from app.models.user import User
 from app.dependencies import permission_required, can_access_department
 from fastapi.templating import Jinja2Templates
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -64,11 +67,11 @@ async def search_questions(
             department = db.query(Department).filter(Department.id == dept_id).first()
             
             if department:
-                print(f"過濾部門: ID={dept_id}, 名稱={department.name}")
+                logger.debug("過濾部門: ID=%s", dept_id)
                 
                 # 檢查權限
                 if not can_access_department(current_user, dept_id, db):
-                    print(f"用戶無權訪問部門 ID: {dept_id}")
+                    logger.info("用戶無權訪問部門 ID: %s", dept_id)
                 else:
                     # 過濾與此部門關聯的問題
                     query = query.filter(
@@ -78,7 +81,7 @@ async def search_questions(
                         )
                     )
         except ValueError:
-            print(f"無效的部門 ID: {department_id}")
+            logger.warning("無效的部門 ID: %s", department_id)
     else:
         # 如果沒有指定部門，則只顯示用戶有權限的部門的問題
         accessible_departments = []
@@ -113,7 +116,7 @@ async def search_questions(
             status_enum = QuestionStatus(status)
             query = query.filter(Question.status == status_enum)
         except (ValueError, KeyError):
-            print(f"無效的狀態值: {status}")
+            logger.warning("無效的狀態值: %s", status)
     
     # 關鍵字搜尋
     if keyword and keyword.strip():
@@ -228,7 +231,7 @@ def export_filtered_questions(
             status_enum = QuestionStatus(status)
             query = query.filter(Question.status == status_enum)
         except (ValueError, KeyError):
-            print(f"無效的狀態值: {status}")
+            logger.warning("無效的狀態值: %s", status)
     
     # 關鍵字搜尋
     if keyword and keyword.strip():

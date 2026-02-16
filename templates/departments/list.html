@@ -1,20 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>部門管理</h2>
-    
-    {% if error %}
-    <div class="alert alert-danger" role="alert">
-        {{ error }}
-    </div>
-    {% endif %}
-    
-    <div class="mb-3">
-        <a href="/departments/create" class="btn btn-primary">新增部門</a>
-    </div>
-    
-    <div class="card">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">部門管理</h2>
+    <a href="/departments/create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> 新增部門</a>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="card">
         <div class="card-body">
             <h5 class="card-title">局/處級單位</h5>
             <div class="table-responsive">
@@ -58,5 +54,4 @@
             </div>
         </div>
     </div>
-</div>
 {% endblock %} 

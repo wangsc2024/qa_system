@@ -41,7 +41,16 @@ def create_admin_user():
                 email="admin@example.com",
                 is_active=True
             )
-            admin.set_password("admin123")
+            # 使用環境變數設定管理員密碼，禁止硬編碼（安全修復）
+            admin_password = os.environ.get('QA_ADMIN_PASSWORD')
+            if not admin_password:
+                logger.warning('環境變數 QA_ADMIN_PASSWORD 未設定，請設定後重新啟動')
+                logger.warning('使用方式: set QA_ADMIN_PASSWORD=您的安全密碼')
+                # 產生隨機密碼作為臨時方案
+                import secrets
+                admin_password = secrets.token_urlsafe(16)
+                logger.warning(f'已產生臨時隨機密碼（僅顯示一次）: {admin_password}')
+            admin.set_password(admin_password)
             db.add(admin)
             db.commit()
             logger.info("已創建管理員用戶")
@@ -77,12 +86,13 @@ app = FastAPI()
 from app.config import Config
 # FastAPI 不使用 secret_key 屬性，而是在依賴項中使用 Config.SECRET_KEY
 
+_allowed_origins = os.environ.get("QA_CORS_ORIGINS", "http://172.20.11.22:8000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -171,7 +181,6 @@ async def logout():
 async def sso_login(request: Request, ssoToken1: str = None, db: Session = Depends(get_db)):
     try:
         artifact = ssoToken1
-        print(f"artifact: {artifact}")
         if not artifact:
             return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
@@ -270,7 +279,10 @@ async def sso_login(request: Request, ssoToken1: str = None, db: Session = Depen
                 response.set_cookie(
                     key="access_token",
                     value=f"Bearer {access_token}",
-                    httponly=True
+                    httponly=True,
+                    secure=True,       # 僅 HTTPS 傳送（安全修復）
+                    samesite="lax",    # 防 CSRF（安全修復）
+                    max_age=1800
                 )
                 return response
                 
@@ -279,11 +291,11 @@ async def sso_login(request: Request, ssoToken1: str = None, db: Session = Depen
                 
         except Exception as soap_error:
             logging.error(f"SOAP 呼叫失敗: {str(soap_error)}")
-            return RedirectResponse(url=f"/login?error=SOAP呼叫失敗:{str(soap_error)}", status_code=status.HTTP_302_FOUND)
+            return RedirectResponse(url="/login?error=SSO驗證服務暫時無法使用，請稍後再試", status_code=status.HTTP_302_FOUND)
 
     except Exception as e:
         logging.error(f"登入過程發生錯誤: {str(e)}")
-        return RedirectResponse(url=f"/login?error=系統錯誤:{str(e)}", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/login?error=系統暫時無法處理您的請求，請稍後再試", status_code=status.HTTP_302_FOUND)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()

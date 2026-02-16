@@ -173,3 +173,4 @@ __pycache__
 .cursor
 *.db
 *.log
+logs/

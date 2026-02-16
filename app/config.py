@@ -1,8 +1,9 @@
 import os
+import secrets
 
 class Config:
     DATABASE_URL = "sqlite:///./qa_system.db"
-    SECRET_KEY = "2bbd5caa6a996d5ab0d6605c2351455494a33799e3c32365"
+    SECRET_KEY = os.environ.get("QA_SECRET_KEY", secrets.token_hex(24))
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 30
     
